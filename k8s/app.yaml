@@ -1,0 +1,264 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: project
+data:
+  PROJECT: ackstorm-demo-project
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db
+data:
+  HOST: 35.223.28.236
+  DATABASE: demo
+  TABLE: demo
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: creds
+type: Opaque
+data:
+  user: c3VyZW4=
+  password: c3VyZW4=
+
+---
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: trace-db-client
+  labels:
+    trace: db-client
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        trace: db-client
+    spec:
+      containers:
+      - image: viejo/trace:v4-client-app
+        name: python
+        ports:
+        - containerPort: 8080
+          name: python
+        envFrom:
+        - configMapRef:
+            name: project
+      - image: viejo/trace:v4-client-envoy
+        name: envoy
+        ports:
+        - containerPort: 80
+          name: envoy
+        - containerPort: 8081
+          name: admin
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: trace-db-client
+spec:
+  ports:
+  - name: envoy
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    trace: db-client
+  type: LoadBalancer
+
+---
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: trace-db-dump
+  labels:
+    trace: db-dump
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        trace: db-dump
+    spec:
+      containers:
+      - image: viejo/trace:v4-server-dump-app
+        name: python
+        ports:
+        - containerPort: 8080
+          name: python
+        env:
+        - name: USER
+          valueFrom:
+            secretKeyRef:
+              name: creds
+              key: user
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: creds
+              key: password
+        envFrom:
+        - configMapRef:
+            name: db
+        - configMapRef:
+            name: project
+      - image: viejo/trace:v4-server-dump-envoy
+        name: envoy
+        ports:
+        - containerPort: 80
+          name: envoy
+        - containerPort: 8081
+          name: admin
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-dump
+spec:
+  ports:
+  - name: envoy
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    trace: db-dump
+    
+---
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: trace-db-read
+  labels:
+    trace: db-read
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        trace: db-read
+    spec:
+      containers:
+      - image: viejo/trace:v4-server-read-app
+        name: python
+        ports:
+        - containerPort: 8080
+          name: python
+        env:
+        - name: USER
+          valueFrom:
+            secretKeyRef:
+              name: creds
+              key: user
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: creds
+              key: password
+        envFrom:
+        - configMapRef:
+            name: db
+        - configMapRef:
+            name: project
+      - image: viejo/trace:v4-server-read-envoy
+        name: envoy
+        ports:
+        - containerPort: 80
+          name: envoy
+        - containerPort: 8081
+          name: admin
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-read
+spec:
+  ports:
+  - name: envoy
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    trace: db-read
+    
+---
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: trace-db-write
+  labels:
+    trace: db-write
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        trace: db-write
+    spec:
+      containers:
+      - image: viejo/trace:v4-server-write-app
+        name: python
+        ports:
+        - containerPort: 8080
+          name: python
+        env:
+        - name: USER
+          valueFrom:
+            secretKeyRef:
+              name: creds
+              key: user
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: creds
+              key: password
+        envFrom:
+        - configMapRef:
+            name: db
+        - configMapRef:
+            name: project
+      - image: viejo/trace:v4-server-write-envoy
+        name: envoy
+        ports:
+        - containerPort: 80
+          name: envoy
+        - containerPort: 8081
+          name: admin
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-write
+spec:
+  ports:
+  - name: envoy
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    trace: db-write

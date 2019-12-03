@@ -1,0 +1,6 @@
+Flask
+requests
+opencensus
+opencensus-ext-stackdriver
+grpcio
+mysql-connector
