@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: project
 data:
-  PROJECT: ackstorm-demo-project
+  PROJECT: PROJECT
 
 ---
 
