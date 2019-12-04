@@ -12,9 +12,9 @@ kind: ConfigMap
 metadata:
   name: db
 data:
-  HOST: 35.223.28.236
-  DATABASE: demo
-  TABLE: demo
+  HOST: DATABASE_IP
+  DATABASE: DATABASE
+  TABLE: TABLE
 
 ---
 
@@ -24,8 +24,8 @@ metadata:
   name: creds
 type: Opaque
 data:
-  user: c3VyZW4=
-  password: c3VyZW4=
+  user: USER
+  password: PASSWORD
 
 ---
 
